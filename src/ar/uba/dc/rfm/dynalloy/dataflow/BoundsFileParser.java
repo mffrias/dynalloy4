@@ -146,6 +146,20 @@ public class BoundsFileParser {
 		else
 			typesDefaultBounds.put("IndexOutOfBoundsException", indexOutOfBoundsExceptionBounds);
 	
+		Set<Bound> assertionErrorBounds = new LinkedHashSet<Bound>();
+		addAssertionErrorBounds(assertionErrorBounds);
+		if (JAVA_LANG_PREFIX)
+			typesDefaultBounds.put("java_lang_AssertionError", assertionErrorBounds);
+		else
+			typesDefaultBounds.put("AssertionError", assertionErrorBounds);
+		
+		Set<Bound> errorBounds = new LinkedHashSet<Bound>();
+		addErrorBounds(errorBounds);
+		if (JAVA_LANG_PREFIX)
+			typesDefaultBounds.put("java_lang_Error", assertionErrorBounds);
+		else
+			typesDefaultBounds.put("Error", assertionErrorBounds);
+				
 		Set<Bound> nullPointerExceptionBounds = new LinkedHashSet<Bound>();
 		addNullPointerExceptionBounds(nullPointerExceptionBounds);
 		if (JAVA_LANG_PREFIX)
@@ -278,6 +292,20 @@ public class BoundsFileParser {
 			bounds.add(Bound.buildBound("NullPointerExceptionLit"));
 	}
 	
+	private void addAssertionErrorBounds(Set<Bound> bounds) {
+		if (JAVA_LANG_PREFIX)
+			bounds.add(Bound.buildBound("java_lang_AssertionErrorLit"));
+		else
+			bounds.add(Bound.buildBound("AssertionErrorLit"));
+	}
+
+	private void addErrorBounds(Set<Bound> bounds) {
+		if (JAVA_LANG_PREFIX)
+			bounds.add(Bound.buildBound("java_lang_ErrorLit"));
+		else
+			bounds.add(Bound.buildBound("ErrorLit"));
+	}
+
 	private void parseAndLoadSpecification(String boundsSpecFilePath) {
 		File file = new File(boundsSpecFilePath);
 		Document doc;
