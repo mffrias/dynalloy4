@@ -124,7 +124,7 @@ public class AlloyAnalyzer {
 		A4Options alloyOptions = new A4Options();
 
 		// Default solver is MiniSatJNI if none is specified
-		alloyOptions.solver = A4Options.SatSolver.MiniSat220JNI;
+		alloyOptions.solver = A4Options.SatSolver.SAT4J;
 		return alloyOptions;
 	}
 
