@@ -78,6 +78,8 @@ public class DynAlloyCompiler {
 		alloy_string_plugins.add(plugin);
 	}
 
+	public static boolean isCheckAndAfterRunSpec = false;
+
 	private String readFile(Reader reader) throws IOException {
 		LineNumberReader lnreader = null;
 		StringBuffer buff = new StringBuffer();
@@ -119,6 +121,9 @@ public class DynAlloyCompiler {
 
 		// Translate AST
 		DynAlloyTranslator dynalloyToAlloyXlator = new DynAlloyTranslator(translatingForStryker);
+
+		DynAlloyTranslator.isCheckAndAfterRunSpec = isCheckAndAfterRunSpec;
+
 		AlloyModule alloyAST = dynalloyToAlloyXlator.translateDynAlloyAST(dynalloyAST, options, 
 				varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram, 
 				predsComingFromArithmeticConstraintsInContractsByProgram,

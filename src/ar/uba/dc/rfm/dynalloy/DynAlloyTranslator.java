@@ -51,6 +51,8 @@ public class DynAlloyTranslator {
 		this.specContext = specContext;
 	}
 
+	public static boolean isCheckAndAfterRunSpec = false;
+
 	private DynalloyModule unrollDynAlloyAST(DynalloyModule spec, int loopUnroll, boolean addSkip, DynAlloyAlloyMapping mapping, boolean removeExitWhileGuard) {
 		DynalloyMutator closureRemover = new DynalloyMutator(new ClosureRemover(loopUnroll, addSkip, removeExitWhileGuard), mapping);
 		DynalloyModule noClosureSpec = (DynalloyModule) spec.accept(closureRemover);
@@ -64,11 +66,15 @@ public class DynAlloyTranslator {
 			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule) throws RecognitionException, TokenStreamException,
 			IOException, AssertionNotFound {
 
+		DynalloyXlatorVisitor.isCheckAndAfterRunSpec = isCheckAndAfterRunSpec;
+
 		DynalloyXlatorVisitor visitor = new DynalloyXlatorVisitor(this.specContext, options, 
 				varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram, 
 				predsComingFromArithmeticConstraintsInContractsByProgram,
 				varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
 				predsComingFromArithmeticConstraintsInObjectInvariantsByModule, translatingForStryker);
+
+
 		AlloyModule alloyAST = (AlloyModule) dynalloyAST.accept(visitor);
 		return alloyAST;
 	}

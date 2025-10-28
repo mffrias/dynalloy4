@@ -95,6 +95,7 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 
 	private boolean translatingForStryker = false;
 
+	public static boolean isCheckAndAfterRunSpec = false;
 
 	public DynalloyXlatorVisitor(SpecContext _specContext, DynAlloyOptions options, 
 			HashMap<String, AlloyTyping> vars, HashMap<String, List<AlloyFormula>> preds,
@@ -373,7 +374,9 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 			}
 		}
 
-		aux_af = new AndFormula(aux_af, program.getFormula());
+		if (!isCheckAndAfterRunSpec) {
+			aux_af = new AndFormula(aux_af, program.getFormula());
+		}
 
 		if (predsToAddThatComeFromInvariant != null){
 			for (AlloyFormula af : predsToAddThatComeFromInvariant){
