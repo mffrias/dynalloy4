@@ -365,6 +365,8 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 
 		AlloyFormulaWithLocals program = (AlloyFormulaWithLocals) n.getProgram().accept(programTranslator);
 
+		AlloyFormulaWithLocals noProgram = (AlloyFormulaWithLocals) n.getProgram().accept(programTranslator);
+
 		IdxRangeMap irm = varCollector.collect(program.getFormula());
 
 		if (predsForCurrentProgram != null){
@@ -393,7 +395,12 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 			}
 		}
 
-		AlloyFormula post = addIdxsToPost(n.getPost(), varCollector.collect(aux_af));
+		AlloyFormula post;
+		if (!isCheckAndAfterRunSpec) {
+			post = addIdxsToPost(n.getPost(), varCollector.collect(aux_af));
+		} else {
+			post = addIdxsToPost(n.getPost(), irm);
+		}
 		if (translatingForStryker)
 			post = new NotFormula(post);
 
