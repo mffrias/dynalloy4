@@ -127,7 +127,7 @@ public class DynAlloyConsole {
 			File dynalloyFile = new File(inputFilename);
 
 			if (dynalloyOptions.getRunAlloyAnalyzer() == false) {
-				analyzer.compile(dynalloyFile, dynalloyOptions);
+				analyzer.compile(dynalloyFile, dynalloyOptions, null);
 			} else {
 
 				List<AlloyCommand> commands = analyzer

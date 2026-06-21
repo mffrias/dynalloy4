@@ -60,7 +60,7 @@ public class LocalVariableTest {
 		DynalloyModule dynalloyAST = parser.parse(dynalloyStr);
 
 		DynAlloyTranslator xlator = new DynAlloyTranslator(false);
-		AlloyModule alloyAST = xlator.translateDynAlloyAST(dynalloyAST, DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS, null, null, null, null);
+		AlloyModule alloyAST = xlator.translateDynAlloyAST(dynalloyAST, DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS, null, null, null, null, null);
 
 		AlloyPrinter printer = new AlloyPrinter();
 		String alloyStr = (String) alloyAST.accept(printer);

@@ -197,7 +197,7 @@ class ProgramTranslator extends DfsProgramVisitor {
 			context.switchToAlias(aliasModuleId);
 			String programPredicate = (String) programDeclaration
 					.accept(new DynalloyXlatorVisitor(context, null, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-							new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false));
+							new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null));
 			context.switchToModule(contextModuleId);
 		}
 		AlloyFormulaWithLocals formulaWithLocals = context.invokeProgram(

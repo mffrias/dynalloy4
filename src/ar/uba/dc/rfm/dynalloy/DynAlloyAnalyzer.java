@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import antlr.RecognitionException;
@@ -19,7 +18,6 @@ import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 
 import ar.uba.dc.rfm.alloy.AlloyTyping;
 import ar.uba.dc.rfm.alloy.ast.AlloyModule;
-import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 import ar.uba.dc.rfm.alloy.util.AlloyPrinter;
 import ar.uba.dc.rfm.dynalloy.analyzer.AlloyAnalysisException;
@@ -63,7 +61,7 @@ public final class DynAlloyAnalyzer {
 			AlloyModule alloyAST = controller.compile(dalsFile.getAbsolutePath(),
 					dalsFileToAlsPath(dalsFile),
 					DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-					new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+					new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 
 			// Print Alloy AST
 			String optionsHeader = controller.buildOptionsHeader(options);
@@ -96,7 +94,7 @@ public final class DynAlloyAnalyzer {
 			AlloyCommand command, DynAlloyOptions options) throws VizException {
 
 		// output: .ALS File , .settings File
-		compile(dynAlloyFile, options);
+		compile(dynAlloyFile, options, null);
 
 		DynAlloySolution dynalloyInstance = null;
 		if (options.getRunAlloyAnalyzer() == true) {
@@ -106,7 +104,7 @@ public final class DynAlloyAnalyzer {
 		return dynalloyInstance;
 	}
 
-	void compile(File dalsFile, DynAlloyOptions options) throws VizException {
+	void compile(File dalsFile, DynAlloyOptions options, Object inputToFix) throws VizException {
 
 		compiler = new DynAlloyCompiler();
 
@@ -120,7 +118,7 @@ public final class DynAlloyAnalyzer {
 
 			AlloyModule alloyModule = compiler.compile(dalsFile.getAbsolutePath(),
 					output_filename, options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-					new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+					new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, inputToFix);
 
 			// Print Alloy AST
 			String optionsHeader = compiler.buildOptionsHeader(options);

@@ -50,7 +50,7 @@ public class MainCommon {
 		options.setBuildDynAlloyTrace(false);
 		
 		translator.translateDynAlloyAST(module, options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>());
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), null);
 		return translator.getSpecContext();
 	}
 	

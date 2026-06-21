@@ -63,7 +63,7 @@ public class DynAlloyTranslator {
 			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram,
 			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInContractsByProgram,
 			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule) throws RecognitionException, TokenStreamException,
+			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule, Object inputToFix) throws RecognitionException, TokenStreamException,
 			IOException, AssertionNotFound {
 
 		DynalloyXlatorVisitor.isCheckAndAfterRunSpec = isCheckAndAfterRunSpec;
@@ -72,7 +72,7 @@ public class DynAlloyTranslator {
 				varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram, 
 				predsComingFromArithmeticConstraintsInContractsByProgram,
 				varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-				predsComingFromArithmeticConstraintsInObjectInvariantsByModule, translatingForStryker);
+				predsComingFromArithmeticConstraintsInObjectInvariantsByModule, translatingForStryker, inputToFix);
 
 
 		AlloyModule alloyAST = (AlloyModule) dynalloyAST.accept(visitor);
@@ -83,7 +83,7 @@ public class DynAlloyTranslator {
 			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram,
 			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInContractsByProgram,
 			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule) throws RecognitionException, TokenStreamException,
+			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule, Object inputToFix) throws RecognitionException, TokenStreamException,
 			IOException, AssertionNotFound {
 		DynAlloyAlloyMapping mapping = new DynAlloyAlloyMapping();
 		DynalloyModule unrolledAST = null;
@@ -98,7 +98,7 @@ public class DynAlloyTranslator {
 				varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram, 
 				predsComingFromArithmeticConstraintsInContractsByProgram,
 				varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-				predsComingFromArithmeticConstraintsInObjectInvariantsByModule);
+				predsComingFromArithmeticConstraintsInObjectInvariantsByModule, inputToFix);
 		return alloyAST;
 	}
 

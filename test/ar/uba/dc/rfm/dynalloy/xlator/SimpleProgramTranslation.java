@@ -238,7 +238,7 @@ public class SimpleProgramTranslation {
 		context.setFields(new AlloyTyping());
 		context.switchToModule("moduleId");
 		a1Body.accept(new DynalloyXlatorVisitor(context, null, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false));
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null));
 		return context;
 	}
 

@@ -38,7 +38,7 @@ import ar.uba.dc.rfm.dynalloy.ast.programs.WhileProgram;
 
 public class DfsProgramVisitor implements ProgramVisitor {
 
-	protected FormulaVisitor getDfsFormulaVisitor() {
+	public FormulaVisitor getDfsFormulaVisitor() {
 		return fVisitor;
 	}
 

@@ -1,6 +1,12 @@
 package ar.uba.dc.rfm.dynalloy;
 
+import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class DynAlloyOptions {
 
@@ -27,6 +33,8 @@ public class DynAlloyOptions {
 	private String output_filename;
 	
 	private String module_under_analysis_name;
+
+	private Set<AlloyFormula> programSpecs = new HashSet<>();
 
 	public static final DynAlloyOptions DEFAULT_DYNALLOY_OPTIONS = build_default_dynalloy_options();
 
@@ -108,7 +116,14 @@ public class DynAlloyOptions {
 
 	public void setRemoveQuantifier(boolean remove_quantifiers) {
 		this.removeQuantifiers = remove_quantifiers;
+	}
 
+	public void setProgramSpecs(Set<AlloyFormula> specFormulas) {
+		programSpecs = specFormulas;
+	}
+
+	public Set<AlloyFormula> getProgramSpecs(){
+		return programSpecs;
 	}
 
 	public void setStrictUnroll(boolean strict_unrolling) {
@@ -142,6 +157,5 @@ public class DynAlloyOptions {
 	public String getOutputFilename() {
 		return this.output_filename;
 	}
-	
-	
-} 
+
+}

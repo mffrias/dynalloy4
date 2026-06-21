@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.junit.Test;
@@ -14,7 +13,6 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import ar.uba.dc.rfm.alloy.AlloyTyping;
 import ar.uba.dc.rfm.alloy.ast.AlloyModule;
-import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 import ar.uba.dc.rfm.alloy.util.AlloyPrinter;
 import ar.uba.dc.rfm.dynalloy.DynAlloyAnalyzer;
@@ -42,7 +40,7 @@ public class OldExprGammarTest {
 		
 		AlloyModule alloyAST = c.compile("test/regr/new_grammar/old_expr_grammar.dals",
 				"test/regr/new_grammar/old_expr_grammar.als", options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 
 		// Print Alloy AST
 		String optionsHeader = c.buildOptionsHeader(options);
@@ -107,7 +105,7 @@ public class OldExprGammarTest {
 
 		AlloyModule alloyAST = c.compile("test/regr/new_grammar/old_expr_in_assume.dals",
 				"test/regr/new_grammar/old_expr_in_assume.als", options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 
 		// Print Alloy AST
 		String optionsHeader = c.buildOptionsHeader(options);

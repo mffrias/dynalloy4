@@ -1,9 +1,7 @@
 package regr.new_grammar;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import org.junit.Test;
@@ -12,7 +10,6 @@ import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import ar.uba.dc.rfm.alloy.AlloyTyping;
 import ar.uba.dc.rfm.alloy.ast.AlloyModule;
-import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 import ar.uba.dc.rfm.alloy.util.AlloyPrinter;
 import ar.uba.dc.rfm.dynalloy.DynAlloyCompiler;
@@ -36,7 +33,7 @@ public class New_GrammarTest {
 
 		AlloyModule alloyAST = c.compile("test/regr/new_grammar/grammar_ext.dals",
 				"test/regr/new_grammar/grammar_ext.als", options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 
 		// Print Alloy AST
 		String optionsHeader = c.buildOptionsHeader(options);
@@ -71,7 +68,7 @@ public class New_GrammarTest {
 		
 		AlloyModule alloyAST = c.compile("test/regr/new_grammar/new_grammar.dals",
 				"test/regr/new_grammar/new_grammar.als", options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 		
 		// Print Alloy AST
 		String optionsHeader = c.buildOptionsHeader(options);
@@ -105,7 +102,7 @@ public class New_GrammarTest {
 				
 		c.compile("test/regr/new_grammar/old_grammar.dals",
 				"test/regr/new_grammar/old_grammar.als", options, new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(),
-				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false);
+				new HashMap<String, AlloyTyping>(), new HashMap<String, List<AlloyFormula>>(), false, null);
 
 	}
 

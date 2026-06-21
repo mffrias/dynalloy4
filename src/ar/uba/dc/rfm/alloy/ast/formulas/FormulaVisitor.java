@@ -105,8 +105,7 @@ public class FormulaVisitor implements IFormulaVisitor {
 		result.add(n.getOperator());
 		result.add(n.getNames());
 		result.add(n.getSets());
-		AlloyFormula af = (AlloyFormula)n.getFormula().accept(this);
-		result.add(af);
+		result.add(n.getFormula().accept(this));
 		return result;
 	}
 

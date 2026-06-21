@@ -25,10 +25,8 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 
 import antlr.RecognitionException;
@@ -36,8 +34,6 @@ import antlr.TokenStreamException;
 
 import ar.uba.dc.rfm.alloy.AlloyTyping;
 import ar.uba.dc.rfm.alloy.ast.AlloyModule;
-import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
-import ar.uba.dc.rfm.alloy.ast.expressions.ExprVariable;
 import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 import ar.uba.dc.rfm.alloy.util.AlloyPrinter;
 import ar.uba.dc.rfm.dynalloy.ast.DynalloyModule;
@@ -97,11 +93,11 @@ public class DynAlloyCompiler {
 	}
 
 	public AlloyModule compile(String inputFilename, String outputFilename, DynAlloyOptions options,
-			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule,
-			HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram,
-			HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInContractsByProgram,
-			boolean translatingForStryker) throws RecognitionException, TokenStreamException, IOException,
+							   HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
+							   HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInObjectInvariantsByModule,
+							   HashMap<String, AlloyTyping> varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram,
+							   HashMap<String, List<AlloyFormula>> predsComingFromArithmeticConstraintsInContractsByProgram,
+							   boolean translatingForStryker, Object inputToFix) throws RecognitionException, TokenStreamException, IOException,
 			AssertionNotFound {
 
 		//REGIS: Place in which new DynAlloy may be included
@@ -128,7 +124,7 @@ public class DynAlloyCompiler {
 				varsAndTheirTypesComingFromArithmeticConstraintsInContractsByProgram, 
 				predsComingFromArithmeticConstraintsInContractsByProgram,
 				varsAndTheirTypesComingFromArithmeticConstraintsInObjectInvariantsByModule,
-				predsComingFromArithmeticConstraintsInObjectInvariantsByModule);
+				predsComingFromArithmeticConstraintsInObjectInvariantsByModule, inputToFix);
 		this.specContext = dynalloyToAlloyXlator.getSpecContext();
 		
 		// Apply AlloyAST plugins

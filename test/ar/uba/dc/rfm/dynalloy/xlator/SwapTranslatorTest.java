@@ -77,7 +77,7 @@ public class SwapTranslatorTest {
 		DynalloyParser parser = new DynalloyParser();
 		DynalloyModule dynalloyAST = parser.parse(swapSpecDynalloyAST);
 		
-		AlloyModule alloyAST = subject.translateDynAlloyAST(dynalloyAST , DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS, null, null, null, null);
+		AlloyModule alloyAST = subject.translateDynAlloyAST(dynalloyAST , DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS, null, null, null, null, null);
 		
 		AlloyPrinter printer = new AlloyPrinter();
 		String alloyStr = (String) alloyAST.accept(printer);
