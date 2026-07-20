@@ -21,7 +21,6 @@ package ar.uba.dc.rfm.alloy.ast;
 
 import java.util.Set;
 
-import ar.uba.dc.rfm.alloy.AlloyCheckCommand;
 import ar.uba.dc.rfm.alloy.AlloyTyping;
 import ar.uba.dc.rfm.alloy.ast.formulas.AlloyFormula;
 
