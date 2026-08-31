@@ -43,11 +43,15 @@ public class FormulaVisitor implements IFormulaVisitor {
 	}
 
 	public Object visit(AndFormula f) {
-		Object l = f.getLeft().accept(this);
-		Object r = f.getRight().accept(this);
 		Vector<Object> result = new Vector<Object>();
-		result.add(l);
-		result.add(r);
+		try {
+			Object l = f.getLeft().accept(this);
+			Object r = f.getRight().accept(this);
+			result.add(l);
+			result.add(r);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return result;
 	}
 

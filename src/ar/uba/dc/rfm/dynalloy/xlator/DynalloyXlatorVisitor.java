@@ -368,8 +368,6 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 
         AlloyFormulaWithLocals program = (AlloyFormulaWithLocals) n.getProgram().accept(programTranslator);
 
-        AlloyFormulaWithLocals noProgram = (AlloyFormulaWithLocals) n.getProgram().accept(programTranslator);
-
         IdxRangeMap irm = varCollector.collect(program.getFormula());
 
         if (predsForCurrentProgram != null) {
