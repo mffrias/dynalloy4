@@ -119,12 +119,29 @@ public class AlloyAnalyzer {
 		return result;
 	}
 
+	/**
+	 * System property that selects the SAT solver: "sat4j" (the default) or
+	 * "minisat", MiniSat 2.2 through JNI (MiniSat220JNI, the solver used before
+	 * SAT4J became the default). alloy4.jar only ships MiniSat 2.2 for x86 and
+	 * x86_64 (x86-mac, x86-linux, amd64-linux), so it needs an x86 JVM, e.g.
+	 * under Rosetta on Apple Silicon.
+	 */
+	public static final String SOLVER_PROPERTY = "dynalloy.solver";
+
 	public static A4Options build_A4Options() {
 
 		A4Options alloyOptions = new A4Options();
 
-		// Default solver is MiniSatJNI if none is specified
-		alloyOptions.solver = A4Options.SatSolver.SAT4J;
+		// SAT4J unless -Ddynalloy.solver=minisat
+		String solver = System.getProperty(SOLVER_PROPERTY, "sat4j");
+		if (solver.equalsIgnoreCase("sat4j")) {
+			alloyOptions.solver = A4Options.SatSolver.SAT4J;
+		} else if (solver.equalsIgnoreCase("minisat")) {
+			alloyOptions.solver = A4Options.SatSolver.MiniSat220JNI;
+		} else {
+			throw new IllegalArgumentException("Unknown SAT solver " + SOLVER_PROPERTY + "=" + solver
+					+ " (use sat4j or minisat)");
+		}
 		return alloyOptions;
 	}
 
