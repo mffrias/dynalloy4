@@ -19,7 +19,14 @@
  */
 package ar.uba.dc.rfm.dynalloy.analyzer;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Locale;
 
 import edu.mit.csail.sdg.alloy4.Err;
@@ -37,6 +44,9 @@ public final class AlloyJNILibraryPath {
 
 	/** This variable caches the result of alloyHome() function call. */
 	private static String alloyHome = null;
+
+	/** Whether copyFromJAR already replaced outdated files in this JVM. */
+	private static boolean outdatedReplaced = false;
 
 	public AlloyJNILibraryPath() {
 
@@ -119,13 +129,75 @@ public final class AlloyJNILibraryPath {
 			// The error will be caught later by the "berkmin" or "spear" test
 		}
 		// Copy the platform-dependent binaries
-		Util.copy(true, false, platformBinary, arch + "/libminisat.so", arch + "/libminisatx1.so", arch + "/libminisat220.jnilib", arch + "/libminisat220.so", arch + "/libminisat.jnilib", arch + "/libminisatprover.so",
+		String[] executables = { arch + "/libminisat.so", arch + "/libminisatx1.so", arch + "/libminisat220.jnilib", arch + "/libminisat220.so", arch + "/libminisat.jnilib", arch + "/libminisatprover.so",
 				arch + "/libminisatproverx1.so", arch + "/libminisatprover.jnilib", arch + "/libzchaff.so", arch + "/libzchaffx1.so", arch
-						+ "/libzchaff.jnilib", arch + "/berkmin", arch + "/spear");
-		Util.copy(false, false, platformBinary, arch + "/minisat.dll", arch + "/minisatprover.dll", arch + "/zchaff.dll", arch + "/berkmin.exe", arch
-				+ "/spear.exe");
+						+ "/libzchaff.jnilib", arch + "/berkmin", arch + "/spear" };
+		String[] others = { arch + "/minisat.dll", arch + "/minisatprover.dll", arch + "/zchaff.dll", arch + "/berkmin.exe", arch
+				+ "/spear.exe" };
+		synchronized (AlloyJNILibraryPath.class) {
+			if (!outdatedReplaced) {
+				replaceOutdated(true, platformBinary, executables);
+				replaceOutdated(false, platformBinary, others);
+				outdatedReplaced = true;
+			}
+		}
+		Util.copy(true, false, platformBinary, executables);
+		Util.copy(false, false, platformBinary, others);
 		// Copy the model files
 
+	}
+
+	/**
+	 * Replaces the files in dir that differ from the jar's copy of the named
+	 * resources (copyFromJAR does it once per JVM). Util.copy only copies a
+	 * file that is not there yet, so a library extracted by a run with an
+	 * older alloy4.jar would be used for good: on Apple Silicon, for example,
+	 * the x86_64-only MiniSat 2.2 that an arm64 JVM cannot load. The new copy
+	 * is renamed over the old file, so another JVM that has the old one loaded
+	 * keeps it; like Util.copy, it is made readable (and executable, if
+	 * executable is set) by the owner only. Files that are not there yet, and
+	 * resources that are not in the jar, are left to Util.copy.
+	 */
+	private static void replaceOutdated(boolean executable, String dir, String... names) {
+		for (String name : names) {
+			File file = new File(dir, name.substring(name.lastIndexOf('/') + 1));
+			if (!file.isFile())
+				continue;
+			File copy = null;
+			try {
+				byte[] inJar = readResource(name);
+				if (inJar == null || Arrays.equals(inJar, Files.readAllBytes(file.toPath())))
+					continue;
+				copy = File.createTempFile(file.getName(), ".tmp", file.getParentFile());
+				Files.write(copy.toPath(), inJar);
+				if (!Util.onWindows())
+					Files.setPosixFilePermissions(copy.toPath(),
+							PosixFilePermissions.fromString(executable ? "rwx------" : "rw-------"));
+				Files.move(copy.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,
+						StandardCopyOption.ATOMIC_MOVE);
+			} catch (IOException e) {
+				System.err.println("Could not replace " + file + " with the copy in the jar: " + e);
+			} finally {
+				if (copy != null)
+					copy.delete(); // only still there if the move failed
+			}
+		}
+	}
+
+	/**
+	 * The bytes of the named resource, read the way Util.copy reads it, or
+	 * null if there is no such resource.
+	 */
+	private static byte[] readResource(String name) throws IOException {
+		try (InputStream in = Util.class.getClassLoader().getResourceAsStream(name)) {
+			if (in == null)
+				return null;
+			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+			byte[] buffer = new byte[16384];
+			for (int n; (n = in.read(buffer)) >= 0;)
+				bytes.write(buffer, 0, n);
+			return bytes.toByteArray();
+		}
 	}
 
 }
