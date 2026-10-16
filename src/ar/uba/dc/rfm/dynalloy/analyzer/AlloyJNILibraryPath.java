@@ -48,6 +48,9 @@ public final class AlloyJNILibraryPath {
 	/** Whether copyFromJAR already replaced outdated files in this JVM. */
 	private static boolean outdatedReplaced = false;
 
+	/** Whether loadMiniSat220 already ran in this JVM. */
+	private static boolean miniSat220Loaded = false;
+
 	public AlloyJNILibraryPath() {
 
 	}
@@ -68,6 +71,35 @@ public final class AlloyJNILibraryPath {
 			old.setAccessible(true);
 			old.set(null, newarray);
 		} catch (Throwable ex) {
+			// Newer JVMs (17 and 21, for example) hide usr_paths from reflection,
+			// so System.loadLibrary does not look in binary.
+			loadMiniSat220(binary);
+		}
+	}
+
+	/**
+	 * Loads MiniSat 2.2's JNI library from dir with System.load, once per JVM,
+	 * for JVMs where java.library.path cannot be changed at run time. Kodkod's
+	 * MiniSat220 loads it with System.loadLibrary("minisat220"), which only
+	 * looks in java.library.path; when that fails Kodkod goes on, and its
+	 * native methods are then bound to this library, because it was loaded by
+	 * the class loader that also loads Kodkod (both are on the class path, and
+	 * dynalloy4.jar bundles alloy4.jar).
+	 */
+	private static synchronized void loadMiniSat220(String dir) {
+		if (miniSat220Loaded)
+			return;
+		miniSat220Loaded = true;
+		String name = System.mapLibraryName("minisat220");
+		File library = new File(dir, name);
+		if (!library.isFile() && name.endsWith(".dylib")) // Util.copy extracts the .jnilib on macOS
+			library = new File(dir, name.substring(0, name.length() - ".dylib".length()) + ".jnilib");
+		if (!library.isFile())
+			return; // no MiniSat 2.2 for this platform
+		try {
+			System.load(library.getPath());
+		} catch (UnsatisfiedLinkError e) {
+			System.err.println("Could not load MiniSat 2.2 from " + library + ": " + e.getMessage());
 		}
 	}
 
