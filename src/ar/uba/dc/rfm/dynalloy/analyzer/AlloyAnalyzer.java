@@ -125,9 +125,9 @@ public class AlloyAnalyzer {
 	/**
 	 * System property that selects the SAT solver: "auto" (the default),
 	 * "minisat" or "sat4j". "minisat" is MiniSat 2.2 through JNI
-	 * (MiniSat220JNI), which alloy4.jar ships for macOS (x86_64 and arm64, see
-	 * README.md) and for x86 and amd64 Linux; "auto" uses it when its library
-	 * for this platform is in alloy4.jar and loads, and SAT4J otherwise.
+	 * (MiniSat220JNI), which alloy4.jar ships for macOS (x86_64 and arm64) and
+	 * for x86, amd64 and arm64 Linux (see README.md); "auto" uses it when its
+	 * library for this platform is in alloy4.jar and loads, and SAT4J otherwise.
 	 */
 	public static final String SOLVER_PROPERTY = "dynalloy.solver";
 
