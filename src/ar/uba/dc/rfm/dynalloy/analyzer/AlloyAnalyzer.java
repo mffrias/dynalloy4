@@ -28,12 +28,15 @@ import ar.uba.dc.rfm.dynalloy.visualization.PrintStreamA4Reporter;
 import ar.uba.dc.rfm.dynalloy.visualization.VizException;
 import edu.mit.csail.sdg.alloy4.A4Reporter;
 import edu.mit.csail.sdg.alloy4.Err;
+import edu.mit.csail.sdg.alloy4.Util;
 import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.parser.CompUtil;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Options;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
+import kodkod.engine.satlab.SATFactory;
+import kodkod.engine.satlab.SATSolver;
 
 public class AlloyAnalyzer {
 
@@ -120,28 +123,81 @@ public class AlloyAnalyzer {
 	}
 
 	/**
-	 * System property that selects the SAT solver: "sat4j" (the default) or
-	 * "minisat", MiniSat 2.2 through JNI (MiniSat220JNI, the solver used before
-	 * SAT4J became the default). alloy4.jar ships MiniSat 2.2 for macOS
-	 * (x86_64 and arm64, see README.md) and for x86 and amd64 Linux.
+	 * System property that selects the SAT solver: "auto" (the default),
+	 * "minisat" or "sat4j". "minisat" is MiniSat 2.2 through JNI
+	 * (MiniSat220JNI), which alloy4.jar ships for macOS (x86_64 and arm64, see
+	 * README.md) and for x86 and amd64 Linux; "auto" uses it when its library
+	 * for this platform is in alloy4.jar and loads, and SAT4J otherwise.
 	 */
 	public static final String SOLVER_PROPERTY = "dynalloy.solver";
+
+	/** Why MiniSat 2.2 cannot be used in this JVM, or null if it can (see miniSat220Problem()). */
+	private static String miniSat220Problem = null;
+	private static boolean miniSat220Checked = false;
+
+	/** The solver "auto" chose in this JVM; null until the first analysis. */
+	private static A4Options.SatSolver autoSolver = null;
 
 	public static A4Options build_A4Options() {
 
 		A4Options alloyOptions = new A4Options();
 
-		// SAT4J unless -Ddynalloy.solver=minisat
-		String solver = System.getProperty(SOLVER_PROPERTY, "sat4j");
+		String solver = System.getProperty(SOLVER_PROPERTY, "auto");
 		if (solver.equalsIgnoreCase("sat4j")) {
 			alloyOptions.solver = A4Options.SatSolver.SAT4J;
 		} else if (solver.equalsIgnoreCase("minisat")) {
+			String problem = miniSat220Problem();
+			if (problem != null) {
+				throw new IllegalStateException(SOLVER_PROPERTY + "=minisat, but " + problem
+						+ " (" + SOLVER_PROPERTY + "=sat4j or auto would solve with SAT4J)");
+			}
 			alloyOptions.solver = A4Options.SatSolver.MiniSat220JNI;
+		} else if (solver.equalsIgnoreCase("auto")) {
+			alloyOptions.solver = autoSolver();
 		} else {
 			throw new IllegalArgumentException("Unknown SAT solver " + SOLVER_PROPERTY + "=" + solver
-					+ " (use sat4j or minisat)");
+					+ " (use auto, minisat or sat4j)");
 		}
 		return alloyOptions;
+	}
+
+	/** MiniSat 2.2 if it can be used here, SAT4J otherwise, saying so once. */
+	private static synchronized A4Options.SatSolver autoSolver() {
+		if (autoSolver == null) {
+			String problem = miniSat220Problem();
+			if (problem == null) {
+				autoSolver = A4Options.SatSolver.MiniSat220JNI;
+			} else {
+				autoSolver = A4Options.SatSolver.SAT4J;
+				System.err.println("DynAlloy: solving with SAT4J, because " + problem + ".");
+			}
+		}
+		return autoSolver;
+	}
+
+	/**
+	 * Null if MiniSat 2.2 can be used in this JVM, or why not: its library for
+	 * this platform is not in alloy4.jar, or it does not load. Checked once,
+	 * after making the extracted libraries loadable, by creating and freeing a
+	 * MiniSat 2.2 solver.
+	 */
+	private static synchronized String miniSat220Problem() {
+		if (!miniSat220Checked) {
+			miniSat220Checked = true;
+			String library = AlloyJNILibraryPath.platformFolder() + "/" + AlloyJNILibraryPath.miniSat220FileName();
+			if (Util.class.getClassLoader().getResource(library) == null) {
+				miniSat220Problem = "alloy4.jar has no MiniSat 2.2 for this platform (" + library + ")";
+			} else {
+				try {
+					new AlloyJNILibraryPath().setupJNILibraryPath();
+					SATSolver miniSat = SATFactory.MiniSat220.instance();
+					miniSat.free();
+				} catch (Throwable e) {
+					miniSat220Problem = "MiniSat 2.2 (" + library + ") does not load: " + e;
+				}
+			}
+		}
+		return miniSat220Problem;
 	}
 
 	public AlloyAnalysisResult nextSolution(AlloyAnalysisResult previousSolution) throws Err {

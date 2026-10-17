@@ -130,9 +130,11 @@ public final class AlloyJNILibraryPath {
 		return alloyHome = ans;
 	}
 
-	/** Copy the required files from the JAR into a temporary directory. */
-	private void copyFromJAR() {
-		// Compute the appropriate platform
+	/**
+	 * The folder of alloy4.jar that holds the native solvers for this platform,
+	 * e.g. "x86-mac" on any Mac, "amd64-linux" or "aarch64-linux".
+	 */
+	static String platformFolder() {
 		String os = System.getProperty("os.name").toLowerCase(Locale.US).replace(' ', '-');
 		if (os.startsWith("mac-"))
 			os = "mac";
@@ -150,7 +152,24 @@ public final class AlloyJNILibraryPath {
 //nrosner june 25 2013, removed code prevented amd64 architecture from being correctly determined
 //		else if (os.equals("linux"))
 //			arch = "x86-linux";
-				
+		return arch;
+	}
+
+	/** The name of MiniSat 2.2's JNI library in the platform folder. */
+	static String miniSat220FileName() {
+		String os = System.getProperty("os.name").toLowerCase(Locale.US);
+		if (os.startsWith("mac"))
+			return "libminisat220.jnilib";
+		if (os.startsWith("windows"))
+			return "minisat220.dll";
+		return "libminisat220.so";
+	}
+
+	/** Copy the required files from the JAR into a temporary directory. */
+	private void copyFromJAR() {
+		// Compute the appropriate platform
+		String arch = platformFolder();
+
 		// Find out the appropriate Alloy directory
 		final String platformBinary = alloyHome() + fs + "binary";
 		// Write a few test files
