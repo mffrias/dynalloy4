@@ -2,7 +2,8 @@
 
 Points where the code does not say what was intended. They are collected here
 for the maintainer (Marcelo Frias) instead of being guessed in the other pages.
-Line numbers are those of the stryker branch, 2026-10-17.
+Line numbers are those of the `javadoc` branch (the stryker code with its
+Javadoc), 2026-10-20.
 
 1. **Specified output (`isCheckAndAfterRunSpec`).** In
    `DynalloyXlatorVisitor.visit(AssertionDeclaration)` the program's formula is
@@ -14,7 +15,7 @@ Line numbers are those of the stryker branch, 2026-10-17.
    meant to come back?
 2. **`inputToFix` in DynAlloy.** Its only use is to widen the index range of the
    module's variables in the second copy of the invariant predicates (at the last
-   indices) from `[b, b]` to `[b, b + 1]` (lines 393-402, added in b58e74b). What is the widening for, and
+   indices) from `[b, b]` to `[b, b + 1]` (lines 538-547, added in b58e74b). What is the widening for, and
    for which translations? TACO's stryker branch now passes the input to DynAlloy
    only when it is not translating for Stryker (you said the block was not meant
    for Stryker's feedback checks).
@@ -34,7 +35,7 @@ Line numbers are those of the stryker branch, 2026-10-17.
 6. **The appended functions.** For each program without a parameter
    `throw: java_lang_Throwable + null`, the translator appends
    `fun <program>[<params>] : <return type> { <first parameter> }`, with the
-   parameter types read from a new, empty typing (lines 150-169), so they
+   parameter types read from a new, empty typing (lines 245-264), so they
    would print as `null`. TACO's programs all have `throw`, so it does not
    happen there. What is it for?
 7. **Building with newer JDKs.** The build needs JDK 8 (`source`/`target` 1.7).
@@ -46,7 +47,7 @@ Line numbers are those of the stryker branch, 2026-10-17.
 
 ## From the Javadoc pass
 
-9. **`AlloyAnalyzer.a4reporter` and `solvingTime`** (`analyzer/AlloyAnalyzer.java:43`, `47`):
+9. **`AlloyAnalyzer.a4reporter` and `solvingTime`** (`analyzer/AlloyAnalyzer.java:71`, `83`):
    these public static fields are never assigned (always null and -1) and nothing reads them;
    only `answer` and `log4Jreporter` are written. Are they meant to be filled (for example, so
    that TACO can read the solving time), or can they go?
@@ -54,20 +55,20 @@ Line numbers are those of the stryker branch, 2026-10-17.
     `parse` and others declare it and TACO catches it, but nothing throws it, and nothing has
     since the first commit. Should a module without an assertion throw it? Today it ends in a
     `NullPointerException` in `DynalloyXlatorVisitor.visit(DynalloyModule)`.
-11. **`import` sections** (`parser/splitter/DocumentSplitter.java:108-113`, `124-126`,
+11. **`import` sections** (`parser/splitter/DocumentSplitter.java:142-147`, `158-160`,
     `beginsDynalloyCheck`): `import` starts a section, but `getKind` returns null for it, so
-    `DynalloyParser.java:102` throws a `NullPointerException`. What are `import` sections for:
+    `DynalloyParser.java:143` throws a `NullPointerException`. What are `import` sections for:
     should the keyword get a kind, or be removed?
-12. **Substring lookups in the assertion** (`xlator/DynalloyXlatorVisitor.java:317`,
+12. **Substring lookups in the assertion** (`xlator/DynalloyXlatorVisitor.java:462`,
     `visit(AssertionDeclaration)`): the invariant predicates come from the last key that the
-    assertion id `contains` (325-329), but their typing from the exact key
-    `options.getModuleUnderAnalysis()` (360, 382); the contract's predicates and typing come from
-    the first key that the called program's id `contains`, in `HashMap` order (337-356), while
-    `visit(DynalloyModule)` uses the exact key "assertion id without `check_`" (208-209). With
+    assertion id `contains` (470-474), but their typing from the exact key
+    `options.getModuleUnderAnalysis()` (505, 527); the contract's predicates and typing come from
+    the first key that the called program's id `contains`, in `HashMap` order (482-501), while
+    `visit(DynalloyModule)` uses the exact key "assertion id without `check_`" (303-304). With
     `contains`, an id that contains another (`C_addAll`, `C_add`) can get the other's entry. Are
     the substring lookups meant to find the same entries as the exact ones?
-13. **`ProgramTranslator.setNewProgramId`** (`xlator/ProgramTranslator.java:210-216`): it stores a
+13. **`ProgramTranslator.setNewProgramId`** (`xlator/ProgramTranslator.java:261-275`): it stores a
     program id and resets a counter, but nothing reads either. Is it still needed?
-14. **`SpecContext.getTemporalInvokeProgramTyping`** (`xlator/SpecContext.java:234`): an
+14. **`SpecContext.getTemporalInvokeProgramTyping`** (`xlator/SpecContext.java:397`): an
     auto-generated stub that returns null, and nothing calls it. What was it meant to return, or
     can it go?

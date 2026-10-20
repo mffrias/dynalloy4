@@ -10,7 +10,7 @@ Each item says whether it was seen in a run or read from the code. Checked on
 
     java -cp dist/dynalloy4.jar ar.uba.dc.rfm.dynalloy.Main --input test/regr/swap/swap.dals --output /tmp/swap.als
 
-ends in a `NullPointerException` at `DynalloyXlatorVisitor.java:359`, with or
+ends in a `NullPointerException` at `DynalloyXlatorVisitor.java:504`, with or
 without `--assertion`, and writes nothing. The translator expects what TACO
 passes in: the four maps of invariant and contract predicates and typings (the
 console passes empty ones, so `predsToAddThatComeFromInvariant` stays null), an
@@ -34,8 +34,8 @@ the code).
 [AGENTS.md](../AGENTS.md)), **21 of its 193 tests fail**, the same 21 on master
 (seen):
 
-- 13 with a `NullPointerException` in `DynalloyXlatorVisitor` (lines 190, 325
-  and 359), the same cause as the command line: `DynAlloyAnalyzerTest`,
+- 13 with a `NullPointerException` in `DynalloyXlatorVisitor` (lines 285, 470
+  and 504), the same cause as the command line: `DynAlloyAnalyzerTest`,
   `LocalVariableTest`, `DynalloyToAlloyTranslatorTest`, `SwapTranslatorTest`,
   `regr.new_grammar.*` and `regr.viz.*`;
 - 6 in `DocumentSplitterTest`, which expect `alloy` sections where the splitter
