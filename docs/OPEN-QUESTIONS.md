@@ -58,3 +58,16 @@ Line numbers are those of the stryker branch, 2026-10-17.
     `beginsDynalloyCheck`): `import` starts a section, but `getKind` returns null for it, so
     `DynalloyParser.java:102` throws a `NullPointerException`. What are `import` sections for:
     should the keyword get a kind, or be removed?
+12. **Substring lookups in the assertion** (`xlator/DynalloyXlatorVisitor.java:317`,
+    `visit(AssertionDeclaration)`): the invariant predicates come from the last key that the
+    assertion id `contains` (325-329), but their typing from the exact key
+    `options.getModuleUnderAnalysis()` (360, 382); the contract's predicates and typing come from
+    the first key that the called program's id `contains`, in `HashMap` order (337-356), while
+    `visit(DynalloyModule)` uses the exact key "assertion id without `check_`" (208-209). With
+    `contains`, an id that contains another (`C_addAll`, `C_add`) can get the other's entry. Are
+    the substring lookups meant to find the same entries as the exact ones?
+13. **`ProgramTranslator.setNewProgramId`** (`xlator/ProgramTranslator.java:210-216`): it stores a
+    program id and resets a counter, but nothing reads either. Is it still needed?
+14. **`SpecContext.getTemporalInvokeProgramTyping`** (`xlator/SpecContext.java:234`): an
+    auto-generated stub that returns null, and nothing calls it. What was it meant to return, or
+    can it go?

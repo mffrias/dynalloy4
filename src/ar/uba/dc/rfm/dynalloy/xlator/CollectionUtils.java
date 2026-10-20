@@ -28,6 +28,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+/**
+ * Small collection helpers of this package. Only {@code diff} and {@code intersect} are used,
+ * by {@link ChoiceJoiner} and {@link DynalloyXlatorVisitor}; both return a new {@code HashSet}
+ * and leave their arguments as they are. No state.
+ */
 final class CollectionUtils {
 	@SuppressWarnings("unchecked")
 	public static<Key,Value> Map<Key,Value> map(Object ... args){

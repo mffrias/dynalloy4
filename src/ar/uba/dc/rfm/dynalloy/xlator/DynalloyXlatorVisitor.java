@@ -77,6 +77,40 @@ import ar.uba.dc.rfm.dynalloy.ast.programs.InvokeProgram;
 import ar.uba.dc.rfm.dynalloy.util.DynalloyVisitor;
 import ar.uba.dc.rfm.dynalloy.visualization.DynalloyVisualizerException;
 
+/**
+ * Translates a loop-free DynAlloy module into an Alloy module: the last step of
+ * {@code DynAlloyTranslator.translateDynAlloyAST}, which unrolls the loops
+ * ({@code da2a.prepare.ClosureRemover}), builds a {@link SpecContext} from the unrolled module,
+ * creates one visitor and has the module accept it ({@link #visit(DynalloyModule)}). The
+ * result goes to {@code DynAlloyCompiler}'s Alloy-AST plugins and printer. docs/ARCHITECTURE.md
+ * ("Translation") has the overview.
+ *
+ * <p>Variables are indexed: {@code x_0} is the value of {@code x} at the start, and each change
+ * moves it to a higher index ({@link FirstSubindexer}, {@link CompositionJoiner},
+ * {@link ChoiceJoiner}). Each action and each program becomes an Alloy {@code pred} whose
+ * parameters are the indexed copies that its formula uses of its parameters and, for a program,
+ * of its local variables and those of the programs it calls ({@link CallingConvention}). The
+ * module's assertion becomes an Alloy {@code assert} ({@link #visit(AssertionDeclaration)}). A
+ * {@link ProgramTranslator} translates the program bodies; a call to a program not translated
+ * yet makes it translate the callee first, with another visitor of this class, without options
+ * or maps ({@link ProgramTranslator#visit(InvokeProgram)}).
+ *
+ * <p>The four maps are TACO's: the typings and predicates that come from arithmetic in
+ * contracts, by program id, and in object invariants, by module id (docs/ARCHITECTURE.md,
+ * "Where it sits"). Translating a module needs them and the options (an assertion id
+ * {@code check_<program>}, the module under analysis); without them it fails with a
+ * {@code NullPointerException} (docs/KNOWN-LIMITATIONS.md, "DynAlloy works only through TACO").
+ *
+ * <p>Assumes, of the module: no loops left (a {@code Closure} or a {@code WhileProgram} throws
+ * an {@code UnsupportedOperationException}); no recursion among its programs (jDynAlloy unfolds
+ * it for TACO); every call to an action or program of the module itself; exactly one
+ * assertion; and every variable typed, by its action, program or assertion or by TACO's maps
+ * (an {@code IllegalArgumentException} otherwise).
+ *
+ * <p>Static state: {@link #isCheckAndAfterRunSpec}. Everything else is per visitor. The DynAlloy
+ * module is not changed; the {@link SpecContext} is: its calling conventions, translations,
+ * current module, counter and mapping.
+ */
 public class DynalloyXlatorVisitor extends DynalloyVisitor {
 
     private boolean prettyPrinting = true;
@@ -99,10 +133,36 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
 
     private boolean translatingForStryker = false;
 
+    /**
+     * Static: when set, {@link #visit(AssertionDeclaration)} builds the assertion that computes
+     * a method's specified output instead of the usual check. {@code DynAlloyTranslator} copies
+     * its own static flag here before each translation, and {@code DynAlloyCompiler.compile}
+     * copies its static flag into that one, so through the compiler it holds the value of the
+     * last compilation; a visitor created directly gets whatever was set last
+     * (docs/KNOWN-LIMITATIONS.md, "Translation"). See docs/ARCHITECTURE.md ("What TACO passes
+     * in").
+     */
     public static boolean isCheckAndAfterRunSpec = false;
 
     public Object inputToFix = null;
 
+    /**
+     * Creates the visitor of one translation, with a new {@link ProgramTranslator} on the same
+     * context.
+     *
+     * @param _specContext the context, built from the module this visitor translates
+     * @param options the compilation's options; {@link #visit(DynalloyModule)} and
+     *        {@link #visit(AssertionDeclaration)} need them, {@link #visit(ProgramDeclaration)}
+     *        does not ({@link ProgramTranslator} passes null)
+     * @param vars TACO's typings from arithmetic in contracts, by program id
+     * @param preds TACO's predicates from arithmetic in contracts, by program id
+     * @param varsOI TACO's typings from arithmetic in object invariants, by module id
+     * @param predsOI TACO's predicates from arithmetic in object invariants, by module id
+     * @param forStryker {@code translatingForStryker}: negate the assertion's post
+     *        (docs/ARCHITECTURE.md, "What TACO passes in")
+     * @param inputToFix TACO's input to fix, only tested for null
+     *        ({@link #visit(AssertionDeclaration)})
+     */
     public DynalloyXlatorVisitor(SpecContext _specContext, DynAlloyOptions options,
                                  HashMap<String, AlloyTyping> vars, HashMap<String, List<AlloyFormula>> preds,
                                  HashMap<String, AlloyTyping> varsOI, HashMap<String, List<AlloyFormula>> predsOI,
@@ -119,6 +179,41 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
         this.inputToFix = inputToFix;
     }
 
+    /**
+     * Translates the module. The text of the result is the module's Alloy text as parsed
+     * (everything that is not an action, program or assertion, including the {@code .dals}
+     * commands and those TACO's plugin appended), then the {@code pred} of each action, then
+     * the {@code pred} of each program ({@link #visit(ProgramDeclaration)}), in the order of
+     * the module's sets. After the {@code pred} of each program without a parameter
+     * {@code throw} of type {@code java_lang_Throwable + null}, a {@code fun} is appended
+     * (docs/OPEN-QUESTIONS.md, 6). The result also has a {@code one sig QF}, the facts
+     * (empty unless quantifiers are removed), and one assertion: that of the module's first
+     * {@code assertCorrectness}, in the order of its set ({@link #visit(AssertionDeclaration)};
+     * that there is exactly one is a Java {@code assert}), completed here:
+     * <ul>
+     * <li>without {@code removeQuantifiers}, its quantifier also gets the variables of TACO's
+     *     invariant typing for {@code options.getModuleUnderAnalysis()} and of TACO's
+     *     contract typing for the program named by the assertion id,
+     *     {@code check_<program>};</li>
+     * <li>with {@code removeQuantifiers}, if the assertion's id is
+     *     {@code options.getAssertionId()}, {@code QuantifierRemover} turns it into facts and a
+     *     last, quantifier-free assertion, and {@code QF} gets as fields the variables of both
+     *     typings and those of the remover's signature (with another id, neither happens).</li>
+     * </ul>
+     *
+     * <p>Changes the context: switches it to this module, and fills its calling conventions
+     * and translations. The actions are translated before the programs, which need their
+     * calling conventions.
+     *
+     * @param n the module, after loop unrolling, from which the context was built
+     * @return the Alloy module
+     * @throws NullPointerException if the module has no assertion (after printing "The method
+     *         under analysis may be missing a contract."), if the options or their assertion id
+     *         are null, or, without {@code removeQuantifiers}, if TACO's contract typings have no
+     *         entry for {@code <program>}; also as in {@link #visit(AssertionDeclaration)}
+     * @throws StringIndexOutOfBoundsException if the assertion id is shorter than
+     *         {@code check_}
+     */
     public AlloyModule visit(DynalloyModule n) {
 
         // create buffer
@@ -314,6 +409,56 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
     }
 
 
+    /**
+     * Translates {@code assertCorrectness id[...] { pre, program, post }} into
+     * {@code assert id { all <variables> | A => post' }}, where the antecedent A is the
+     * conjunction, in this order, of:
+     * <ol>
+     * <li>{@code pre}, indexed by {@link FirstSubindexer};</li>
+     * <li>TACO's predicates from arithmetic in object invariants (the entry whose module id
+     *     the assertion id contains), indexed at 0, except that the variables of the invariant
+     *     typing of the module under analysis lose their index
+     *     ({@code QFPreconditionPostfixTransformer});</li>
+     * <li>TACO's predicates from arithmetic in the contract of the program called (the entry
+     *     whose program id the called program's id contains; the assertion's program must be a
+     *     call, or a sequence that starts with one), indexed like the post, with the program's
+     *     ranges;</li>
+     * <li>the invariant predicates again, now with each variable at its last index in the
+     *     program, or in the parts above if the program does not use it, and the variables of
+     *     that typing primed instead ({@code QFPostconditionPostfixTransformer}); with
+     *     {@code inputToFix}, a variable of the module under analysis (by name prefix) whose
+     *     range there is a single index b gets b + 1 (docs/OPEN-QUESTIONS.md, 2);</li>
+     * <li>the program, translated by {@link ProgramTranslator}.</li>
+     * </ol>
+     * In {@code post'}, each variable whose range in the post ends at 1 (it occurs primed) has
+     * index 1 replaced by its last index in A, and index 1 of a variable A does not use becomes
+     * 0; plain occurrences stay at 0. With {@code translatingForStryker} the post is negated.
+     * The quantifier declares every variable of the formula at every index of its range, typed by
+     * the assertion's typing, the program's renamed locals, {@code thiz} (as the module under
+     * analysis, if an invariant predicate mentions it) and TACO's typings for the program and
+     * for the module under analysis; {@link #visit(DynalloyModule)} adds more.
+     *
+     * <p>With {@link #isCheckAndAfterRunSpec}, A leaves the program out (it is only used for
+     * the ranges), {@code post'} is the post indexed by {@link FirstSubindexer} only, and it is
+     * negated (twice with {@code translatingForStryker}): {@code A => not post'}. See
+     * docs/ARCHITECTURE.md ("What TACO passes in") and docs/OPEN-QUESTIONS.md, 1 and 3.
+     *
+     * <p>Unclear: whether these lookups by substring ({@code contains}, the last match for the
+     * invariants and the first for the contract, in {@code HashMap} order) are meant to find the
+     * same entries as the exact keys used elsewhere ({@code options.getModuleUnderAnalysis()}
+     * for the invariant typing, and in {@link #visit(DynalloyModule)} the assertion id without
+     * {@code check_}); a program id that contains another one, such as {@code C_addAll} and
+     * {@code C_add}, can get the other's entry.
+     *
+     * <p>Records the assertion in the context's mapping, if any.
+     *
+     * @param n the module's assertion
+     * @return the {@code AlloyAssertion}
+     * @throws NullPointerException if no key of the invariant predicates map is contained in
+     *         the assertion id, or its list is null, or there are invariant predicates and the
+     *         invariant typings have no entry for the module under analysis
+     * @throws IllegalArgumentException if a variable of the formula has no type
+     */
     public Object visit(AssertionDeclaration n) {
 
         programTranslator.setNewProgramId(n.getAssertionId());
@@ -578,6 +723,23 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
         return buff.toFormula();
     }
 
+    /**
+     * Translates {@code action a[x: T, ...] { pre { P } post { Q } }} into
+     * {@code pred a[<parameters>]{ P' and Q' }}: P and Q indexed by
+     * {@link VariableIndexer#substituteAndIndex} ({@code x} at 0, {@code x'} at 1), and as
+     * parameters the indexed copies of the formal parameters that P' and Q' use, in order, typed
+     * by the action's typing ({@link CallingConvention}). Registers the action's calling
+     * convention in the context, under the current module, the action's id and its number of
+     * parameters, where {@link SpecContext#invokeAction} looks it up at every call. Nothing is
+     * cached: each call of this method translates the action again.
+     *
+     * <p>P, Q and the formal parameters are read from the context by the action's id only: of
+     * two actions with the same id, both are translated from the one the context kept (see
+     * {@link SpecContext}).
+     *
+     * @param n the action
+     * @return the {@code pred}, as text
+     */
     public Object visit(ActionDeclaration n) {
         String actionId = n.getActionId();
         List<AlloyExpression> actualPs = AlloyExpression.asAlloyExpression(asAlloyVariable(n.getFormalParameters()));
@@ -658,6 +820,27 @@ public class DynalloyXlatorVisitor extends DynalloyVisitor {
         return (PredicateFormula) f.accept(new FormulaMutator(new FirstSubindexer()));
     }
 
+    /**
+     * Translates {@code program p[...] var [...] { B }} into
+     * {@code pred p[<parameters>]{ B' }}, or returns the cached text if the program (by id and
+     * number of parameters, in the current module) was already translated, for instance as the
+     * callee of an earlier program ({@link ProgramTranslator#visit(InvokeProgram)}). B' is the
+     * body translated by {@link ProgramTranslator}. The parameters are, for each formal
+     * parameter and then each local variable, its copies at every index of its range in B', in
+     * order; the local variables are the declared ones and every other variable of B' that is
+     * not a parameter (the renamed locals of the programs it calls). They are typed by the
+     * program's typing and the callees' locals.
+     *
+     * <p>Changes the context: registers the program's {@link CallingConvention} and caches the
+     * text and the parameters ({@link SpecContext#putTranslation}), under the current module,
+     * the program's id and its number of parameters; records B' in the mapping
+     * ({@code addRun}), if any.
+     *
+     * @param p the program
+     * @return the {@code pred}, as text
+     * @throws IllegalArgumentException if a variable of the body has no type
+     * @throws UnsupportedOperationException if the body still has a loop
+     */
     public Object visit(ProgramDeclaration p) {
         programTranslator.setNewProgramId(p.getProgramId());
 

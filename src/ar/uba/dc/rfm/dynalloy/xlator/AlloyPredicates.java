@@ -24,6 +24,21 @@ import java.util.Collections;
 import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.formulas.PredicateFormula;
 
+/**
+ * The names and declarations of the two constant predicates of the translation:
+ * {@code TruePred}, which {@link ProgramTranslator} uses for {@code skip}, and {@code FalsePred}.
+ * {@code TRUE_CONSTANT} is also what {@code AndFormula.buildAndFormula} and
+ * {@code OrFormula.buildOrFormula} return when given no formula.
+ *
+ * <p>The declarations ({@code TRUE_PRED_SPEC}, {@code FALSE_PRED_SPEC}) are not added to the
+ * output: the only code that would add them, a private method of
+ * {@link DynalloyXlatorVisitor}, is never called. So the model has to declare {@code TruePred}
+ * itself (docs/KNOWN-LIMITATIONS.md, "Translation"); jDynAlloy's prelude
+ * ({@code JPreludeFactory}) declares both.
+ *
+ * <p>Static state: the two {@code PredicateFormula} constants, shared by every translation in
+ * the JVM; nothing changes them.
+ */
 public interface AlloyPredicates {
 
 	public static final String TRUE_PRED_ID = "TruePred";

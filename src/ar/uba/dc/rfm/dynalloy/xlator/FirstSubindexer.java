@@ -25,6 +25,19 @@ import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.expressions.ExprVariable;
 import ar.uba.dc.rfm.alloy.util.VarSubstitutor;
 
+/**
+ * Gives the first indices to the variables of a formula that has none yet: {@code x} becomes
+ * {@code x_0} and {@code x'} becomes {@code x_1}; {@code \pre[x]} becomes {@code x_0} marked
+ * immutable, so that {@link OffsetSubindexer} never shifts it and {@link IdxRangeCollectHelper}
+ * leaves it out of the ranges: it always means the value before the enclosing program. Used
+ * through a {@code FormulaMutator} (new nodes) on the pre- and postconditions of actions
+ * ({@link VariableIndexer}), on tests ({@link ProgramTranslator}), and on the pre, the post
+ * and TACO's arithmetic predicates in the assertion ({@link DynalloyXlatorVisitor}).
+ *
+ * <p>Assumes that no variable is indexed yet: an indexed one makes it throw a
+ * {@code RuntimeException} ("Indexer only deals with plain and primed variables"). Variables
+ * already marked immutable are left as they are. No state.
+ */
 final class FirstSubindexer extends VarSubstitutor {
 
 	public FirstSubindexer() {

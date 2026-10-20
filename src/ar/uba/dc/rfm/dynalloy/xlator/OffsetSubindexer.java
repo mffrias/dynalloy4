@@ -27,6 +27,13 @@ import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.expressions.ExprVariable;
 import ar.uba.dc.rfm.alloy.util.VarSubstitutor;
 
+/**
+ * Shifts indices by a per-variable offset: {@code x_i} becomes {@code x_(i+k)} for each
+ * variable id with offset k in the map given to the constructor; other variables, and those
+ * marked immutable ({@code \pre[x]}), are kept. {@link CompositionJoiner} uses it, through a
+ * {@code FormulaMutator} (new nodes), to make the second part of a sequence start where the
+ * first ends. Assumes an indexed formula. No static state.
+ */
 final class OffsetSubindexer extends VarSubstitutor {
 
 	@Override

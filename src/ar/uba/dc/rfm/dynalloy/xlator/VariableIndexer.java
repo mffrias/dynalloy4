@@ -11,6 +11,14 @@ import ar.uba.dc.rfm.alloy.ast.expressions.AlloyExpression;
 import ar.uba.dc.rfm.alloy.ast.formulas.PredicateFormula;
 import ar.uba.dc.rfm.alloy.util.FormulaMutator;
 
+/**
+ * Static helpers that index a predicate call over plain and primed variables: substitute the
+ * formal parameters by the actual ones ({@link FormalVariableSubstitutor}) and give the first
+ * indices ({@link FirstSubindexer}). {@link DynalloyXlatorVisitor} indexes the pre- and
+ * postcondition of each action with {@link #substituteAndIndex}, and {@link ProgramTranslator}
+ * indexes tests with {@link #addIdxsToPred}. Never instantiated; no state. The results are new
+ * formulas.
+ */
 abstract class VariableIndexer {
 
 	/**
@@ -24,6 +32,22 @@ abstract class VariableIndexer {
 				new FirstSubindexer()));
 	}
 
+	/**
+	 * Substitutes the formal parameters of {@code p} by the actual ones, then indexes the
+	 * result: {@code x} at 0, {@code x'} at 1. {@link DynalloyXlatorVisitor} passes an action's
+	 * formal parameters as both lists (unless two actions share an id, see
+	 * {@link SpecContext}), so only the indexing changes anything.
+	 *
+	 * @param p a predicate call over plain, primed and {@code \pre} variables
+	 * @param formals the formal parameters
+	 * @param actuals the actual parameters, one per formal one
+	 * @return a new, indexed formula
+	 * @throws IllegalArgumentException if the lists differ in size (with {@code -ea}, an
+	 *         {@code AssertionError} first)
+	 * @throws RuntimeException if a variable of {@code p} is not a formal parameter, or if the
+	 *         actual parameter of a primed formal one is not a variable
+	 *         ({@link FormalVariableSubstitutor})
+	 */
 	public static PredicateFormula substituteAndIndex(PredicateFormula p,
 			List<VariableId> formals, List<AlloyExpression> actuals) {
 		assert (formals.size() == actuals.size());

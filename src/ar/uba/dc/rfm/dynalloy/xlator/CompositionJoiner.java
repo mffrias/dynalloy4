@@ -30,6 +30,21 @@ import ar.uba.dc.rfm.alloy.util.FormulaCloner;
 import ar.uba.dc.rfm.alloy.util.FormulaMutator;
 import ar.uba.dc.rfm.dynalloy.visualization.DynAlloyAlloyMapping;
 
+/**
+ * Joins the translations of the two parts of a sequence {@code p ; q} into
+ * {@code p' and q'}, where q's variables are shifted to start where p leaves them: each
+ * variable of q whose last index in p is e &gt; 0 gets e added to all its indices in q
+ * ({@link OffsetSubindexer}). Variables that p does not use or only reads (last index 0), and
+ * those marked immutable ({@code \pre[x]}, always {@code x_0}), are not shifted. For example,
+ * with {@code updateVar} changing its first parameter, {@code updateVar[temp, a];
+ * updateVar[a, b]; updateVar[b, temp]} becomes {@code updateVar[temp_1, a_0] and
+ * updateVar[a_1, b_0] and updateVar[b_1, temp_1]}.
+ *
+ * <p>{@code ProgramTranslator.visit(Composition)} creates one for each step (a sequence of n
+ * parts is joined left to right), with the context's {@code DynAlloyAlloyMapping}, or null.
+ * Builds new formulas; with a mapping, the mutator also replaces the old formulas of q by the
+ * new ones in it. No static state. See docs/ARCHITECTURE.md ("Translation").
+ */
 class CompositionJoiner {
 
 	private IdxRangeCollectHelper varHelper;

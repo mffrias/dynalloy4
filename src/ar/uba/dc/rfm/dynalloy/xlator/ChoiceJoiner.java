@@ -29,6 +29,28 @@ import ar.uba.dc.rfm.alloy.ast.formulas.OrFormula;
 import ar.uba.dc.rfm.alloy.util.FormulaBuffer;
 import ar.uba.dc.rfm.dynalloy.visualization.DynAlloyAlloyMapping;
 
+/**
+ * Joins the translations of the two branches of a choice {@code p + q} into
+ * {@code p' or q'}, where each branch is completed so that both end with each variable at the
+ * same index. {@code ProgramTranslator.visit(Choice)} creates one for each step (a choice of n
+ * branches is joined left to right), with the context's {@code DynAlloyAlloyMapping}. See
+ * docs/ARCHITECTURE.md ("Translation").
+ *
+ * <p>With f one branch, g the other and the index ranges of their variables
+ * ({@link IdxRangeCollectHelper}), f gets:
+ * <ul>
+ * <li>for a variable only in g, if its range there is not {@code [0, 0]}: {@code x_b = x_e},
+ *     with e the end of the range in g and b its beginning, or 0 if the range is a single index
+ *     or begins at 1 (f leaves the variable as it was);</li>
+ * <li>for a variable in both whose range is {@code [0, 0]} in f but not in g:
+ *     {@code x_0 = x_e}, e the end in g;</li>
+ * <li>for a variable in both whose range is not {@code [0, 0]} in f and ends there before it
+ *     ends in g: its last index in f renamed to its last index in g.</li>
+ * </ul>
+ * The equalities are added to f with {@code and} ({@code FormulaBuffer}). Builds new formulas;
+ * with a mapping, the mutators also replace the old formulas by the new ones in it. No static
+ * state.
+ */
 class ChoiceJoiner {
 
 	private IdxRangeCollectHelper varHelper;
@@ -43,6 +65,13 @@ class ChoiceJoiner {
 		setMapping(mapping);
 	}
 	
+	/**
+	 * Joins two branches (see the class comment).
+	 *
+	 * @param l the translation of the left branch, indexed
+	 * @param r the translation of the right branch, indexed
+	 * @return a new {@code OrFormula} of the two completed branches
+	 */
 	public AlloyFormula join(AlloyFormula l, AlloyFormula r) {
 		IdxRangeMap lrs = varHelper.collect(l);
 		IdxRangeMap rrs = varHelper.collect(r);

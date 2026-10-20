@@ -59,6 +59,22 @@ public final class FormalVariableSubstitutor extends VarSubstitutor {
 
 	private final Set<AlloyVariable> fields;
 
+	/**
+	 * Creates a substitutor of formal parameters by actual ones, used through a
+	 * {@code FormulaMutator} (new nodes) by {@link VariableIndexer#substituteFormalParams}, on
+	 * the pre- and postconditions of actions before they are indexed. A variable whose id is in
+	 * the map becomes a copy of its actual parameter, except that {@code x'} becomes the actual
+	 * parameter's variable, primed; {@code \pre[x]} becomes the actual parameter itself, no longer
+	 * marked as a pre-state value. Any other variable is kept, and must be in {@code _fields}:
+	 * the visit throws a {@code RuntimeException} otherwise ("no actual parameter for formal
+	 * parameter"), and also when the actual parameter of a primed variable is not a variable
+	 * ("The left-hand side of an update must be a variable"). Variables marked immutable are
+	 * never replaced, but are checked the same way.
+	 *
+	 * @param _map the actual parameter of each formal one, by variable id
+	 * @param _fields the variables that may occur without being in the map;
+	 *        {@code VariableIndexer} passes an empty set
+	 */
 	public FormalVariableSubstitutor(Map<VariableId, AlloyExpression> _map,
 			Set<AlloyVariable> _fields) {
 		map = _map;
