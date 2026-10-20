@@ -32,6 +32,23 @@ import ar.uba.dc.rfm.dynalloy.visualization.DynalloyVisualizerException;
 import ar.uba.dc.rfm.dynalloy.visualization.PrintStreamA4Reporter;
 import ar.uba.dc.rfm.dynalloy.visualization.VizException;
 
+/**
+ * Compiles a DynAlloy file and analyses one of its commands, for the console
+ * ({@code DynAlloyConsole}) and the visualizer ({@code DynalloyVisualizerController}). TACO does
+ * not use it: it calls {@link DynAlloyCompiler} and {@code AlloyAnalyzer} itself. It compiles with
+ * a new {@code DynAlloyCompiler}, without plugins and with empty maps, which fails on this branch
+ * (docs/KNOWN-LIMITATIONS.md, "DynAlloy works only through TACO"); solves with
+ * {@code AlloyAnalyzer}; and turns each Alloy solution into a DynAlloy trace
+ * ({@code DynAlloySolutionBuilder}). See docs/ARCHITECTURE.md ("Analysis").
+ *
+ * <p>Files: it writes the Alloy file next to the DynAlloy file (in {@code analyzeCommand} and
+ * {@code compile}, to {@code options.getOutputFilename()} instead, when that is set), and a
+ * {@code .settings} file with the options next to the DynAlloy file. Their paths replace the last
+ * five characters of the DynAlloy file's path, so its name must end in {@code .dals}.
+ *
+ * <p>No static state, but {@code AlloyAnalyzer} has some. Each instance keeps the compiler,
+ * options, analyzer and solution builder of its last analysis, for {@link #nextSolution}.
+ */
 public final class DynAlloyAnalyzer {
 
 	private PrintStreamA4Reporter reporter;
@@ -41,6 +58,15 @@ public final class DynAlloyAnalyzer {
 	private DynAlloySolutionBuilder solutionBuilder;
 	private AlloyAnalyzer analyzer;
 
+	/**
+	 * Sets where this instance's reporter prints. The reporter is used only when
+	 * {@link #getAvailableCommands} parses the Alloy file: {@code AlloyAnalyzer} ignores it, and
+	 * an analysis reports on {@code System.out} (docs/KNOWN-LIMITATIONS.md, "Solver and
+	 * analyzer"). Nothing calls this method; the visualizer sets the stream through
+	 * {@code getReporter()}.
+	 *
+	 * @param printStream the stream
+	 */
 	public void setReporterPrintStream(PrintStream printStream) {
 		reporter.setPrintStream(printStream);
 	}
@@ -50,10 +76,31 @@ public final class DynAlloyAnalyzer {
 		reporter.setVerbosity(true);
 	}
 
+	/**
+	 * Does nothing (docs/KNOWN-LIMITATIONS.md, "Solver and analyzer"). Each analysis sets the
+	 * reporter's verbosity from {@code DynAlloyOptions.getVerbosity()}, which is always false.
+	 *
+	 * @param verbosity ignored
+	 */
 	public void setVerbosity(boolean verbosity) {
 
 	}
 
+	/**
+	 * Translates a DynAlloy file with {@code DynAlloyOptions.DEFAULT_DYNALLOY_OPTIONS} into the
+	 * Alloy file next to it, and returns the commands of that Alloy file. The console calls it
+	 * before {@link #analyzeCommand}, and runs the first command.
+	 *
+	 * <p>After the translation it prints the module and writes the file a second time, with a
+	 * header built from the options of this instance's last analysis; before any analysis those
+	 * are null, and it throws a {@code NullPointerException}.
+	 *
+	 * @param dalsFile the DynAlloy file, whose name ends in {@code .dals}
+	 * @return the commands, in the order of the Alloy file
+	 * @throws VizException if the Alloy file does not parse or type-check
+	 * @throws DynalloyVisualizerException (unchecked) if the DynAlloy file cannot be read or
+	 *         parsed, or the Alloy file cannot be written
+	 */
 	public List<AlloyCommand> getAvailableCommands(File dalsFile)
 			throws VizException {
 		DynAlloyCompiler controller = new DynAlloyCompiler();
@@ -90,6 +137,26 @@ public final class DynAlloyAnalyzer {
 		return getAlloyCommands(dalsFile);
 	}
 
+	/**
+	 * Translates a DynAlloy file (as {@code compile} does) and, if
+	 * {@code options.getRunAlloyAnalyzer()}, runs one command of the Alloy file with
+	 * {@code AlloyAnalyzer} and returns its first solution as a DynAlloy trace. The console and
+	 * the visualizer call it.
+	 *
+	 * <p>Side effects: writes the Alloy and {@code .settings} files; keeps the compiler, the
+	 * options, the analyzer and the solution builder for {@link #nextSolution}; sets the
+	 * reporter's verbosity to false. The analysis has the side effects of
+	 * {@code AlloyAnalyzer.analyzeCommand} (static state, native libraries; docs/SOLVERS.md).
+	 *
+	 * @param dynAlloyFile the DynAlloy file, whose name ends in {@code .dals}
+	 * @param command the command to run, matched by its text, or null for the first one
+	 * @param options the options; {@code alloyOptions} is passed on and ignored
+	 * @return the first solution, or null when {@code options.getRunAlloyAnalyzer()} is false
+	 * @throws VizException if the Alloy file does not parse or type-check, has no commands or not
+	 *         this one, or the analysis fails
+	 * @throws DynalloyVisualizerException (unchecked) if the DynAlloy file cannot be read or
+	 *         parsed, or a file cannot be written
+	 */
 	public DynAlloySolution analyzeCommand(File dynAlloyFile,
 			AlloyCommand command, DynAlloyOptions options) throws VizException {
 
@@ -104,6 +171,21 @@ public final class DynAlloyAnalyzer {
 		return dynalloyInstance;
 	}
 
+	/**
+	 * Translates a DynAlloy file with a new {@link DynAlloyCompiler}, without plugins, with empty
+	 * maps and not for Stryker, into {@code options.getOutputFilename()} or, when that is null,
+	 * the Alloy file next to it; then prints the module and writes the same text to that file a
+	 * second time, and writes the options ({@code DynAlloyOptions.toString()}) to the
+	 * {@code .settings} file next to the DynAlloy file. Replaces this instance's compiler. The
+	 * console calls it when it is not to run the analyzer, and {@link #analyzeCommand} before
+	 * analysing.
+	 *
+	 * @param dalsFile the DynAlloy file, whose name ends in {@code .dals}
+	 * @param options the options of the translation
+	 * @param inputToFix passed to the compiler, which only tests it for null
+	 * @throws DynalloyVisualizerException (unchecked) if the DynAlloy file cannot be read or
+	 *         parsed, or a file cannot be written
+	 */
 	void compile(File dalsFile, DynAlloyOptions options, Object inputToFix) throws VizException {
 
 		compiler = new DynAlloyCompiler();
@@ -182,6 +264,16 @@ public final class DynAlloyAnalyzer {
 		}
 	}
 
+	/**
+	 * Returns the next solution of the last analysis, as a DynAlloy trace. Assumes that
+	 * {@link #analyzeCommand} ran on this instance with {@code getRunAlloyAnalyzer()} set
+	 * (otherwise a {@code NullPointerException}), and that {@code previous} is one of its
+	 * solutions. The visualizer calls it.
+	 *
+	 * @param previous a solution returned by {@code analyzeCommand} or by this method
+	 * @return the next solution; an unsatisfiable one when there are no more
+	 * @throws VizException if Alloy fails, or the trace cannot be built
+	 */
 	public DynAlloySolution nextSolution(DynAlloySolution previous)
 			throws VizException {
 

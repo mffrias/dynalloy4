@@ -46,10 +46,51 @@ import ar.uba.dc.rfm.dynalloy.parser.splitter.DocumentSplitter;
 import ar.uba.dc.rfm.dynalloy.parser.splitter.DynalloySections;
 import ar.uba.dc.rfm.dynalloy.util.DynalloySpecBuffer;
 
+/**
+ * Parses the text of a {@code .dals} file into a {@code DynalloyModule}: the first step of
+ * {@link ar.uba.dc.rfm.dynalloy.DynAlloyCompiler#compile}, its only caller besides
+ * {@code dynalloy.dataflow.MainCommon} and the tests. {@link DocumentSplitter} cuts the text into
+ * sections, and each section is handled by its kind ({@link DynalloySections}), in two passes over
+ * the text:
+ * <ul>
+ * <li>first, the Alloy parts: {@code module}, {@code open} and signature sections are parsed with
+ *     the ANTLR grammar ({@link DynAlloyANTLRParser}), for the module id, the open declarations
+ *     and the fields of the signatures, and are also copied as text; {@code pred} sections and the
+ *     other Alloy text are only copied;</li>
+ * <li>second, the DynAlloy parts: actions, programs and {@code assertCorrectness} sections are
+ *     parsed with the ANTLR grammar.</li>
+ * </ul>
+ * The copied text, in the order of the file and each section followed by a line break, becomes the
+ * module's Alloy text, which the translation prints as it is. See docs/ARCHITECTURE.md
+ * ("Parsing").
+ *
+ * <p>No static state of its own, but the grammar takes the positions of {@code if} and
+ * {@code while} from the static stacks of {@link DynalloyAST}, so parses must not run
+ * concurrently.
+ */
 public class DynalloyParser {
 
 	private AlloyTyping allFields = null;
 
+	/**
+	 * Parses a DynAlloy text into a module (see the class comment). Actions are kept by id,
+	 * programs by {@code <id>::<number of parameters>} and assertions by id: a later one with the
+	 * same key replaces an earlier one, so programs with the same id and the same number of
+	 * parameters collapse into the last one. The fields of every signature, typed
+	 * {@code <signature>->(<type>)}, become the module's {@code getDynalloyFields()}. In each
+	 * assertion, the variables whose names contain {@code SK_jml_pred_java_primitive} (from TACO's
+	 * Java arithmetic) are made immutable, so the translation does not index them.
+	 *
+	 * @param dynalloySpecStr the whole text of the {@code .dals} file
+	 * @return the module
+	 * @throws RecognitionException if a section does not parse; the message is the original one,
+	 *         the line number is that in the whole text
+	 * @throws TokenStreamException if the lexer fails on a section
+	 * @throws IOException not in practice: the text is read from a string
+	 * @throws AssertionNotFound never: it is only declared
+	 * @throws NullPointerException if the text has a section that starts with {@code import},
+	 *         which the splitter gives no kind
+	 */
 	public DynalloyModule parse(String dynalloySpecStr) throws IOException, RecognitionException, TokenStreamException, AssertionNotFound {
 
 		allFields = new AlloyTyping();

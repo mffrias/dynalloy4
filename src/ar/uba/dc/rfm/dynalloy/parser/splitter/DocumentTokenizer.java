@@ -2,6 +2,14 @@ package ar.uba.dc.rfm.dynalloy.parser.splitter;
 
 
 
+/**
+ * Splits a {@link Document} into the tokens that {@link DocumentSplitter} needs: a word (letters,
+ * digits and underscores), a single brace, a line comment ({@code //} or {@code --} to the end of
+ * the line), a block comment (from slash-star to star-slash, or to the end of the document), or
+ * any other single character. Spaces, tabs and line ends separate tokens. It knows no more of
+ * Alloy's syntax: the splitter only looks for keywords and balances braces. No static state; it
+ * starts at the beginning of the document and only moves forward.
+ */
 public class DocumentTokenizer {
 
 	private final Document document;
@@ -12,6 +20,16 @@ public class DocumentTokenizer {
 		this.currentPosition = null;
 	}
 
+	/**
+	 * Reads the next token into {@code token}: sets its document and its first and last positions.
+	 * Empty lines are skipped, except the first one: the first call reads the first character of
+	 * line 1 without checking, so a document whose first line is empty and has more lines throws a
+	 * {@code StringIndexOutOfBoundsException} (and an empty document an
+	 * {@code IndexOutOfBoundsException}).
+	 *
+	 * @param token the token to fill; the caller reuses one instance
+	 * @return false at the end of the document
+	 */
 	public boolean next(DocumentSection token) {
 		token.setDoc(document);
 

@@ -26,11 +26,28 @@ import java.util.Set;
 
 import ar.uba.dc.rfm.alloy.AlloyVariable;
 
+/**
+ * The names that an expression or formula of a DynAlloy action, program or assertion can use as
+ * variables, for the ANTLR grammar ({@link DynAlloyANTLRParser}), which looks each identifier up
+ * here to tell a variable from other names. The grammar makes one per formula, from the declared
+ * parameters (and, for a program, its local variables) and no fields: without primed names for
+ * preconditions and programs, with them for postconditions. The visualizer's watches also use it.
+ * jDynAlloy has its own implementation of {@link IDynalloyProgramParseContext}. No static state.
+ */
 public class DynalloyProgramParseContext implements
 		IDynalloyProgramParseContext {
 
 	private final Map<String, AlloyVariable> vars;
 
+	/**
+	 * Creates a context with the given variables and fields, looked up by their printed names
+	 * ({@code AlloyVariable.toString()}).
+	 *
+	 * @param ctxVariables the variables
+	 * @param ctxFields the fields (the grammar passes none)
+	 * @param allowPrimed true to accept also the primed name {@code x'} of each, the value after
+	 *        the action or program
+	 */
 	public DynalloyProgramParseContext(Set<AlloyVariable> ctxVariables,
 			Set<AlloyVariable> ctxFields, boolean allowPrimed) {
 		this.vars = new HashMap<String, AlloyVariable>();

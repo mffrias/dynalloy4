@@ -8,6 +8,19 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.translator.TranslateAlloyToKodkod;
 
 
+/**
+ * The Alloy reporter of {@link AlloyAnalyzer}: prints the progress of an analysis on
+ * {@code System.out}, each phase with the milliseconds since the reporter was made, and its data
+ * (the solver, bit width and Skolem depth of the translation, the numbers of variables and
+ * clauses, the outcome and the solving time); and Alloy's warnings, numbered, on
+ * {@code System.err}. {@code AlloyAnalyzer.analyzeCommand} makes a new one for each analysis,
+ * keeps it in its static {@code log4Jreporter} (there is no log4j here), and calls
+ * {@code parseAndTypeCheck}, {@code alloy2kodkod} and {@code analysisFinished} or
+ * {@code translationFinished}; Alloy calls the overridden callbacks. Nothing calls
+ * {@code resultXML}, {@code enumSolutions}, {@code enumDone} or {@code new_BQ_witness_found}. The
+ * outcome is worded for a {@code check} ("SAT: A failure has been detected."). It cannot be
+ * replaced or silenced (docs/KNOWN-LIMITATIONS.md, "Solver and analyzer"). No static state.
+ */
 public final class Reporter extends A4Reporter {
 
     public void parseAndTypeCheck(String filename) {

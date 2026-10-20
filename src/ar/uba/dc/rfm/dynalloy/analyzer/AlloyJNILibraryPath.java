@@ -32,6 +32,18 @@ import java.util.Locale;
 import edu.mit.csail.sdg.alloy4.Err;
 import edu.mit.csail.sdg.alloy4.Util;
 
+/**
+ * Makes the native SAT solvers of {@code alloy4.jar} loadable, MiniSat 2.2 above all: extracts
+ * this platform's libraries into {@code <java.io.tmpdir>/alloy4tmp40-<user.name>/binary} and makes
+ * the JVM look there or, where it cannot, loads MiniSat 2.2 itself. {@link AlloyAnalyzer} calls
+ * {@link #setupJNILibraryPath()} before every analysis, and once more when it checks whether
+ * MiniSat 2.2 can be used. See docs/NATIVE-LIBRARIES.md ("How DynAlloy finds the library").
+ *
+ * <p>Reads the system properties {@code java.io.tmpdir}, {@code user.name}, {@code os.name},
+ * {@code os.arch} and {@code file.separator}, and sets {@code java.library.path}. Static state,
+ * for the JVM's life and reset by nothing: the extraction folder, whether outdated files were
+ * replaced, and whether MiniSat 2.2 was loaded with {@code System.load}.
+ */
 public final class AlloyJNILibraryPath {
 
 
@@ -55,6 +67,24 @@ public final class AlloyJNILibraryPath {
 
 	}
 
+	/**
+	 * Extracts the native libraries and makes them loadable. Copies this platform's libraries and
+	 * solver executables out of the jar into the extraction folder, where it also writes a small
+	 * CNF file, {@code tmp.cnf}, that DynAlloy does not read; files already there are kept, except
+	 * that the first call in the JVM first replaces those whose bytes differ from the jar's. The
+	 * first call also makes the folder {@code alloy4tmp40-<user.name>} and runs {@code chmod 700}
+	 * on it. Then sets {@code java.library.path} to the extraction folder, dropping its old value,
+	 * and, through reflection, replaces the class loader's cached {@code usr_paths} with it; where
+	 * reflection cannot reach {@code usr_paths} (newer JVMs), it loads MiniSat 2.2 from the folder
+	 * with {@code System.load} instead, once per JVM. Failures to extract or load are printed on
+	 * {@code System.err} or ignored, not thrown.
+	 *
+	 * <p>{@code usr_paths} is replaced, not extended: on JDK 8, afterwards
+	 * {@code System.loadLibrary} looks only in the extraction folder (docs/NATIVE-LIBRARIES.md).
+	 *
+	 * @throws RuntimeException if {@code java.io.tmpdir} is not set, or the folder cannot be
+	 *         created
+	 */
 	public void setupJNILibraryPath() {
 		copyFromJAR();
 		final String binary = alloyHome() + fs + "binary";

@@ -7,6 +7,12 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Vector;
 
+/**
+ * The text of a {@code .dals} file as a list of lines, for {@link DocumentTokenizer} and
+ * {@link DocumentSplitter}; {@code DynalloyParser} loads one for each of its two passes. A
+ * {@link Position} is 1-based: line 1 is the first line, offset 1 its first character. Line ends
+ * are not characters of the document; {@link #getNext(Position)} skips them. No static state.
+ */
 public class Document {
 	
 	List<String> lines;
@@ -19,6 +25,13 @@ public class Document {
 		Load(new StringReader(spec));
 	}
 
+	/**
+	 * Replaces the lines of the document with those read from the reader, without their line
+	 * terminators. Reads the reader to the end; does not close it.
+	 *
+	 * @param specReader the text
+	 * @throws IOException if the reader fails
+	 */
 	public void Load(Reader specReader) throws IOException {
 		lines.clear();
 		BufferedReader reader = new BufferedReader(specReader);
@@ -60,6 +73,14 @@ public class Document {
 		return pos.getLineNumber() == getLinesCount() && isEndOfLine(pos);
 	}
 	
+	/**
+	 * Returns the position after {@code pos}: the next character of its line or, past the end of
+	 * the line, the first character of the next line that is not empty. Past the end of the last
+	 * line it stops, at a position that {@link #isEndOfDocument(Position)} recognizes.
+	 *
+	 * @param pos a position in the document
+	 * @return a new position
+	 */
 	public Position getNext(Position pos) {
 		pos = new Position(pos.getLineNumber(), pos.getOffset()+1);
 		while (pos.getLineNumber() != getLinesCount() && isEndOfLine(pos)){

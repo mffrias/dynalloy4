@@ -1,5 +1,13 @@
 package ar.uba.dc.rfm.dynalloy.parser.splitter;
 
+/**
+ * A stretch of a {@link Document}, between two positions that are both included, with a kind.
+ * {@link DocumentTokenizer} uses it for a token (with no kind), and {@link DocumentSplitter} for a
+ * section, whose kind is one of {@link DynalloySections}; {@code DynalloyParser} parses or copies
+ * {@link #getText()} by kind, and gives {@link #getFrom()} to the ANTLR parser to make positions
+ * in the section absolute. The tokenizer and the splitter reuse one instance for every token or
+ * section. No static state.
+ */
 public class DocumentSection {
 	Position from, to;
 	Document doc;
@@ -46,6 +54,12 @@ public class DocumentSection {
 		this.kind = kind;
 	}
 
+	/**
+	 * Returns the text from {@code from} to {@code to}, both included, with the lines joined by
+	 * line breaks; comments are kept.
+	 *
+	 * @return the text
+	 */
 	public String getText() {
 		if (from.getLineNumber() == to.getLineNumber()) {
 			return doc.getLine(from.getLineNumber()).substring(from.offset - 1,

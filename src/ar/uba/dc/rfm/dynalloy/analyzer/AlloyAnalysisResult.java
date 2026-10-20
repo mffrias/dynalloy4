@@ -4,6 +4,14 @@ import edu.mit.csail.sdg.alloy4compiler.ast.Command;
 import edu.mit.csail.sdg.alloy4compiler.ast.Module;
 import edu.mit.csail.sdg.alloy4compiler.translator.A4Solution;
 
+/**
+ * The result of one analysis by {@link AlloyAnalyzer}: whether the command is satisfiable, the
+ * Alloy module (world) parsed from the {@code .als} file, the command and Alloy's
+ * {@code A4Solution}. For a {@code check}, satisfiable means a counterexample, which the solution
+ * holds. Made by {@code AlloyAnalyzer.analyzeCommand} and {@code nextSolution}; TACO wraps it in
+ * its {@code TacoAnalysisResult}, and its later stages and Stryker's {@code DarwinistController}
+ * read the counterexample from it. No setters, no static state.
+ */
 public class AlloyAnalysisResult {
 
 	private final boolean is_satisfiable;

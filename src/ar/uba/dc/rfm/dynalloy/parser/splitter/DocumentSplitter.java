@@ -1,5 +1,31 @@
 package ar.uba.dc.rfm.dynalloy.parser.splitter;
 
+/**
+ * Cuts the text of a {@code .dals} file into sections, for {@code DynalloyParser}. The ANTLR
+ * grammar has rules only for the DynAlloy parts (actions, programs, assertions) and for the Alloy
+ * declarations that DynAlloy reads (module, open, signatures), so the rest (facts, functions,
+ * predicates, commands, comments) has to be cut out and passed through as Alloy text. The parser
+ * also makes the positions in a section absolute from the section's start. A section is made of
+ * tokens ({@link DocumentTokenizer}, which keeps comments whole, so that braces in comments do not
+ * count), and its first token gives its kind ({@link DynalloySections}) and where it ends:
+ * <ul>
+ * <li>{@code module} ({@code ALLOY_MODULE}) and {@code open} ({@code ALLOY_OPEN}): at the last
+ *     token that ends on the keyword's line;</li>
+ * <li>{@code action} or {@code act} ({@code DYNALLOY_ACTION}), {@code program} or {@code prog}
+ *     ({@code DYNALLOY_PROGRAM}), {@code assertCorrectness} ({@code DYNALLOY_ASSERTION}),
+ *     {@code sig}, {@code abstract} or {@code one} ({@code ALLOY_SIGNATURE}), and {@code pred}
+ *     ({@code PRED_DECL}): at the right brace that balances the first left brace, or at the end of
+ *     the text;</li>
+ * <li>anything else ({@code ALLOY}): before the next token that is one of those keywords or
+ *     {@code import}, except {@code one}, which may appear in the type of a parameter.</li>
+ * </ul>
+ * {@code import} starts a section like those of the second item, but with no kind (null), on which
+ * {@code DynalloyParser} fails with a {@code NullPointerException}. Unclear: what {@code import}
+ * sections are for (the method that recognizes the keyword is called {@code beginsDynalloyCheck}).
+ * In Alloy text a keyword is recognized wherever it is a whole token, so the Alloy text must not
+ * use the keywords as names. See docs/ARCHITECTURE.md ("Parsing"). No static state; one instance
+ * per pass over a document.
+ */
 public class DocumentSplitter {
 
 	private final Document doc;
@@ -14,6 +40,14 @@ public class DocumentSplitter {
 		useTokenBufferValue = false;
 	}
 
+	/**
+	 * Reads the next section into {@code section}: sets its document, kind and positions (see the
+	 * class comment). After a {@code module}, {@code open} or Alloy text section it has read one
+	 * token too many, which it keeps for the next call.
+	 *
+	 * @param section the section to fill; the caller reuses one instance
+	 * @return false when there are no more sections
+	 */
 	public boolean next(DocumentSection section) {
 		section.setDoc(doc);
 

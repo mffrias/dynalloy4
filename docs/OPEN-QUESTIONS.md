@@ -43,3 +43,18 @@ Line numbers are those of the stryker branch, 2026-10-17.
    and JDK 21 and 25 would build it for Java 8.
 8. **`dynalloy.dataflow` and `da2a.simplify`** are not used by anything outside
    their packages. Are they still needed?
+
+## From the Javadoc pass
+
+9. **`AlloyAnalyzer.a4reporter` and `solvingTime`** (`analyzer/AlloyAnalyzer.java:43`, `47`):
+   these public static fields are never assigned (always null and -1) and nothing reads them;
+   only `answer` and `log4Jreporter` are written. Are they meant to be filled (for example, so
+   that TACO can read the solving time), or can they go?
+10. **`AssertionNotFound`** (`parser/AssertionNotFound.java`): `compile`, `translateDynAlloyAST`,
+    `parse` and others declare it and TACO catches it, but nothing throws it, and nothing has
+    since the first commit. Should a module without an assertion throw it? Today it ends in a
+    `NullPointerException` in `DynalloyXlatorVisitor.visit(DynalloyModule)`.
+11. **`import` sections** (`parser/splitter/DocumentSplitter.java:108-113`, `124-126`,
+    `beginsDynalloyCheck`): `import` starts a section, but `getKind` returns null for it, so
+    `DynalloyParser.java:102` throws a `NullPointerException`. What are `import` sections for:
+    should the keyword get a kind, or be removed?

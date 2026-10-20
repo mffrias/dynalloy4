@@ -21,6 +21,12 @@ package ar.uba.dc.rfm.dynalloy.parser;
 
 import ar.uba.dc.rfm.alloy.parser.IAlloyExpressionParseContext;
 
+/**
+ * The parse context of DynAlloy programs: what the ANTLR grammar ({@link DynAlloyANTLRParser})
+ * asks to tell variables and integer literals from other identifiers. It adds nothing to
+ * {@code IAlloyExpressionParseContext}; the grammar's program rules take this type. Implemented by
+ * {@link DynalloyProgramParseContext} and by jDynAlloy's {@code JDynAlloyProgramParseContext}.
+ */
 public interface IDynalloyProgramParseContext extends IAlloyExpressionParseContext {
 
 }
